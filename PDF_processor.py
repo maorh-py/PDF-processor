@@ -2,16 +2,13 @@ import streamlit as st
 import pdfplumber
 import pandas as pd
 import io
-import re
-from bidi.algorithm import get_display
 
-def fix_hebrew(text):
-    if not isinstance(text, str):
-        return text
-    # בודק אם יש עברית בטקסט
-    if re.search(r'[\u0590-\u05FF]', text):
-        # הופך את סדר האותיות כדי שיוצג נכון
-        return get_display(text)
+# פונקציה פשוטה להיפוך טקסט במידה והוא מכיל עברית
+def reverse_hebrew(text):
+    if isinstance(text, str):
+        # בודק אם יש לפחות אות אחת בעברית
+        if any("\u0590" <= char <= "\u05FF" for char in text):
+            return text[::-1] # הופך את סדר האותיות
     return text
 
 st.set_page_config(page_title="PDF to Sheets", layout="wide")
@@ -31,14 +28,14 @@ if uploaded_file:
             if all_data:
                 df = pd.DataFrame(all_data)
                 
-                # החלת תיקון העברית על כל תא בטבלה
-                df = df.applymap(fix_hebrew)
+                # תיקון השגיאה: שימוש ב-map במקום applymap
+                df = df.map(reverse_hebrew)
                 
                 df = df.dropna(how='all')
                 
-                st.success("הטבלה מוכנה עם תיקון עברית!")
+                st.success("הטבלה עובדה! בדוק אם העברית מסודרת בתיבה למטה:")
                 
-                # העתקה בפורמט טאבים לשייטס
+                # יצירת מחרוזת להעתקה
                 text_to_copy = df.to_csv(index=False, sep='\t', header=False)
                 st.code(text_to_copy, language=None)
 
@@ -48,9 +45,12 @@ if uploaded_file:
                 with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
                     df.to_excel(writer, index=False, header=False)
                 
-                st.download_button(label="📥 הורד קובץ אקסל", data=buffer.getvalue(), 
-                                 file_name="fixed_hebrew_table.xlsx", 
-                                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                st.download_button(
+                    label="📥 הורד קובץ אקסל",
+                    data=buffer.getvalue(),
+                    file_name="fixed_table.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                )
             else:
                 st.error("לא נמצאה טבלה בקובץ.")
     except Exception as e:
