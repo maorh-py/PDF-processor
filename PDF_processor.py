@@ -2,6 +2,7 @@ import streamlit as st
 import pdfplumber
 import pandas as pd
 import io
+from streamlit_components_auth import st_copy_to_clipboard # אופציונלי, נשתמש בשיטה פשוטה יותר
 
 st.set_page_config(page_title="PDF to Sheets", layout="wide")
 st.title("📄 ממיר PDF לטבלה")
@@ -18,26 +19,27 @@ if uploaded_file:
                     all_data.extend(table)
             
             if all_data:
-                # יצירת DataFrame ללא הגדרת כותרות בשלב הראשון
                 df = pd.DataFrame(all_data)
-                
-                # ניקוי שורות ריקות לחלוטין
                 df = df.dropna(how='all')
                 
-                st.success("הטבלה חולצה בהצלחה!")
+                st.success("הטבלה מוכנה!")
                 
-                # הצגת הטבלה ללא כותרות כדי למנוע את השגיאה
-                st.write("תצוגה מקדימה:")
-                st.dataframe(df) 
+                # יצירת מחרוזת טקסט להעתקה (מופרדת בטאבים - מתאים בול לשייטס)
+                text_to_copy = df.to_csv(index=False, sep='\t', header=False)
                 
-                # יצירת קובץ אקסל להורדה
+                # כפתור העתקה מובנה של Streamlit (זמין בגרסאות חדשות)
+                st.code(text_to_copy, language=None)
+                st.info("לחץ על כפתור ההעתקה בפינה הימנית של תיבת הטקסט למעלה, ואז הדבק ב-Sheets")
+
+                st.divider()
+                
+                # כפתור הורדה כגיבוי
                 buffer = io.BytesIO()
                 with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
-                    # כאן אנחנו שומרים את הנתונים כמו שהם
                     df.to_excel(writer, index=False, header=False)
                 
                 st.download_button(
-                    label="📥 הורד קובץ ל-Google Sheets",
+                    label="📥 או הורד כקובץ אקסל",
                     data=buffer.getvalue(),
                     file_name="converted_data.xlsx",
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
