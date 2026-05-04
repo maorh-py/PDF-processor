@@ -1,20 +1,20 @@
 import streamlit as st
 import pdfplumber
 import pandas as pd
-import io
 
-# פונקציה פשוטה להיפוך טקסט במידה והוא מכיל עברית
+# פונקציה לתיקון עברית הפוכה מה-PDF
 def reverse_hebrew(text):
     if isinstance(text, str):
-        # בודק אם יש לפחות אות אחת בעברית
+        # בודק אם יש אותיות בעברית בתוך התא
         if any("\u0590" <= char <= "\u05FF" for char in text):
-            return text[::-1] # הופך את סדר האותיות
+            return text[::-1]
     return text
 
-st.set_page_config(page_title="PDF to Sheets", layout="wide")
-st.title("📄 ממיר PDF לטבלה")
+st.set_page_config(page_title="PDF to Sheets Data", layout="wide")
+st.title("✂️ חילוץ ערכים לסידור עבודה")
+st.write("העתק את הערכים והדבק ב-Sheets באמצעות 'הדבקה מיוחדת' -> 'ערכים בלבד'")
 
-uploaded_file = st.file_uploader("העלה קובץ PDF", type="pdf")
+uploaded_file = st.file_uploader("העלה את קובץ ה-PDF", type="pdf")
 
 if uploaded_file:
     try:
@@ -26,32 +26,22 @@ if uploaded_file:
                     all_data.extend(table)
             
             if all_data:
-                df = pd.DataFrame(all_data)
-                
-                # תיקון השגיאה: שימוש ב-map במקום applymap
-                df = df.map(reverse_hebrew)
-                
-                df = df.dropna(how='all')
-                
-                st.success("הטבלה עובדה! בדוק אם העברית מסודרת בתיבה למטה:")
-                
-                # יצירת מחרוזת להעתקה
-                text_to_copy = df.to_csv(index=False, sep='\t', header=False)
-                st.code(text_to_copy, language=None)
+                # יצירת הטבלה ותיקון עברית בכל התאים
+                df = pd.DataFrame(all_data).map(reverse_hebrew).fillna("")
 
+                # הצגת הנתונים בתיבת קוד להעתקה מהירה
+                # sep='\t' מבטיח שהדבקה ב-Sheets תפצל את הנתונים לעמודות הנכונות
+                clean_text = df.to_csv(index=False, sep='\t', header=False)
+                
+                st.success("הנתונים מוכנים להעתקה!")
+                
+                st.write("לחץ על כפתור ההעתקה (אייקון הדפים) למעלה מימין:")
+                st.code(clean_text, language=None)
+                
                 st.divider()
-                
-                buffer = io.BytesIO()
-                with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
-                    df.to_excel(writer, index=False, header=False)
-                
-                st.download_button(
-                    label="📥 הורד קובץ אקסל",
-                    data=buffer.getvalue(),
-                    file_name="fixed_table.xlsx",
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                )
+                st.write("תצוגה מקדימה של הנתונים:")
+                st.dataframe(df)
             else:
-                st.error("לא נמצאה טבלה בקובץ.")
+                st.error("לא הצלחתי למצוא טבלה בקובץ ה-PDF.")
     except Exception as e:
         st.error(f"שגיאה בעיבוד הקובץ: {e}")
