@@ -2,7 +2,6 @@ import streamlit as st
 import pdfplumber
 import pandas as pd
 import io
-from streamlit_components_auth import st_copy_to_clipboard # אופציונלי, נשתמש בשיטה פשוטה יותר
 
 st.set_page_config(page_title="PDF to Sheets", layout="wide")
 st.title("📄 ממיר PDF לטבלה")
@@ -24,12 +23,12 @@ if uploaded_file:
                 
                 st.success("הטבלה מוכנה!")
                 
-                # יצירת מחרוזת טקסט להעתקה (מופרדת בטאבים - מתאים בול לשייטס)
+                # יצירת מחרוזת טקסט להעתקה (מופרדת בטאבים)
                 text_to_copy = df.to_csv(index=False, sep='\t', header=False)
                 
-                # כפתור העתקה מובנה של Streamlit (זמין בגרסאות חדשות)
+                # תיבת טקסט עם כפתור העתקה מובנה של Streamlit
+                st.write("לחץ על כפתור ההעתקה (האייקון של הדפים) למעלה מימין בתיבה:")
                 st.code(text_to_copy, language=None)
-                st.info("לחץ על כפתור ההעתקה בפינה הימנית של תיבת הטקסט למעלה, ואז הדבק ב-Sheets")
 
                 st.divider()
                 
